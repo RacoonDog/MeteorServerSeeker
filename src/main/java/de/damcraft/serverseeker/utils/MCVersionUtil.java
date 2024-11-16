@@ -1,10 +1,16 @@
 package de.damcraft.serverseeker.utils;
 
-import java.util.HashMap;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 public class MCVersionUtil {
-    private static final HashMap<String, Integer> versions = new HashMap<>() {
+    private static final Object2IntMap<String> versions = new Object2IntOpenHashMap<>() {
         {
+            put("1.21.3", 768);
+            put("1.21.2", 768);
+            put("1.21.1", 767);
+            put("1.21", 767);
+
             put("1.20.6", 766);
             put("1.20.5", 766);
             put("1.20.4", 765);
@@ -35,7 +41,7 @@ public class MCVersionUtil {
 
             put("1.15.2", 578);
             put("1.15.1", 575);
-            put("1.15",   753);
+            put("1.15",   573);
 
             put("1.14.4", 498);
             put("1.14.3", 490);
@@ -88,7 +94,7 @@ public class MCVersionUtil {
         }
     };
 
-    public static Integer versionToProtocol(String versionString) {
-        return versions.get(versionString);
+    public static int versionToProtocol(String versionString) {
+        return versions.getInt(versionString);
     }
 }

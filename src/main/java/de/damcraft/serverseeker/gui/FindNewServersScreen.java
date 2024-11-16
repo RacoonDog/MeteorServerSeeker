@@ -215,7 +215,7 @@ public class FindNewServersScreen extends WindowScreen {
     private final Setting<String> versionStringSetting = sg.add(new StringSetting.Builder()
         .name("version-string")
         .description("The version string (e.g. 1.19.3) of the protocol version the server should have, results may contain different versions that have the same protocol version. Must be at least 1.7.1")
-        .defaultValue("1.20.2")
+        .defaultValue("1.21.1")
         .visible(() -> versionSetting.get() == Version.VersionString)
         .build()
     );
@@ -329,8 +329,8 @@ public class FindNewServersScreen extends WindowScreen {
             switch (versionSetting.get()) {
                 case Protocol -> request.setProtocolVersion(protocolVersionSetting.get());
                 case VersionString -> {
-                   Integer protocol = MCVersionUtil.versionToProtocol(versionStringSetting.get());
-                   if (protocol == null) {
+                   int protocol = MCVersionUtil.versionToProtocol(versionStringSetting.get());
+                   if (protocol == -1) {
                        clear();
                        add(theme.label("Unknown version string"));
                        return;
