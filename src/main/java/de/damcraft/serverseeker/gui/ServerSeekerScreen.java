@@ -139,6 +139,9 @@ public class ServerSeekerScreen extends WindowScreen {
                 this.waitingForAuth = false;
             }
         }
+        if (refreshButton == null && ServerSeekerSystem.get().networkIssue) {
+            this.reload();
+        }
     }
 
     public void cleanUpServers() {

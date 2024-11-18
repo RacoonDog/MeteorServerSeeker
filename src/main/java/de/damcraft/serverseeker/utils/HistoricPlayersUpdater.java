@@ -1,12 +1,13 @@
 package de.damcraft.serverseeker.utils;
 
-import de.damcraft.serverseeker.SmallHttp;
+import de.damcraft.serverseeker.ServerSeekerSystem;
 import de.damcraft.serverseeker.hud.HistoricPlayersHud;
 import de.damcraft.serverseeker.ssapi.requests.ServerInfoRequest;
 import de.damcraft.serverseeker.ssapi.responses.ServerInfoResponse;
 import meteordevelopment.meteorclient.events.game.GameJoinedEvent;
 import meteordevelopment.meteorclient.systems.hud.Hud;
 import meteordevelopment.meteorclient.systems.hud.HudElement;
+import meteordevelopment.meteorclient.utils.network.Http;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 
@@ -14,7 +15,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import static de.damcraft.serverseeker.ServerSeeker.gson;
 import static meteordevelopment.meteorclient.MeteorClient.mc;
 
 public class HistoricPlayersUpdater {
@@ -41,20 +41,25 @@ public class HistoricPlayersUpdater {
         // Split it at "/" and take the second part
         String[] addressParts = address.split("/");
         if (addressParts.length < 2) return;
+        addressParts = addressParts[1].split(":");
 
-        String ip = addressParts[1].split(":")[0];
-        Integer port = Integer.valueOf(addressParts[1].split(":")[1]);
+        String ip = addressParts[0];
+        int port = Integer.parseInt(addressParts[1]);
 
-        ServerInfoRequest request = new ServerInfoRequest();
-        request.setIpPort(ip, port);
+        ServerInfoRequest request = new ServerInfoRequest(ServerSeekerSystem.get().apiKey, ip, port);
 
-        String jsonResp = SmallHttp.post("https://api.serverseeker.net/server_info", request.json());
+        ServerInfoResponse response = Http.post("https://api.serverseeker.net/server_info")
+            .bodyJson(request)
+            .sendJson(ServerInfoResponse.class);
 
-        ServerInfoResponse resp = gson.fromJson(jsonResp, ServerInfoResponse.class);
+        if (response == null) {
+            ServerSeekerSystem.get().networkIssue = true;
+            return;
+        }
 
         for (HistoricPlayersHud hud : huds) {
-            hud.players = Objects.requireNonNullElseGet(resp.players, List::of);
-            hud.isCracked = resp.cracked != null && resp.cracked;
+            hud.players = Objects.requireNonNullElse(response.players(), List.of());
+            hud.isCracked = response.cracked() != null && response.cracked();
         }
     }
 }

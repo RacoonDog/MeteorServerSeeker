@@ -3,7 +3,6 @@ package de.damcraft.serverseeker.gui;
 import com.google.common.net.HostAndPort;
 import de.damcraft.serverseeker.ServerSeeker;
 import de.damcraft.serverseeker.ServerSeekerSystem;
-import de.damcraft.serverseeker.SmallHttp;
 import de.damcraft.serverseeker.country.Country;
 import de.damcraft.serverseeker.country.CountrySetting;
 import de.damcraft.serverseeker.ssapi.requests.ServersRequest;
@@ -16,6 +15,7 @@ import meteordevelopment.meteorclient.gui.widgets.containers.WContainer;
 import meteordevelopment.meteorclient.gui.widgets.containers.WTable;
 import meteordevelopment.meteorclient.gui.widgets.pressable.WButton;
 import meteordevelopment.meteorclient.settings.*;
+import meteordevelopment.meteorclient.utils.network.Http;
 import meteordevelopment.meteorclient.utils.network.MeteorExecutor;
 import net.minecraft.SharedConstants;
 import net.minecraft.client.MinecraftClient;
@@ -28,7 +28,7 @@ import net.minecraft.nbt.NbtCompound;
 
 import java.util.List;
 
-import static de.damcraft.serverseeker.ServerSeeker.gson;
+import static de.damcraft.serverseeker.ServerSeeker.LOG;
 
 public class FindNewServersScreen extends WindowScreen {
     public static NbtCompound savedSettings;
@@ -356,17 +356,25 @@ public class FindNewServersScreen extends WindowScreen {
             MeteorExecutor.execute(() -> {
                 ServerSeekerSystem.get().invalidate();
 
-                String jsonResp = SmallHttp.post("https://api.serverseeker.net/servers", request.json());
+                ServersResponse response = Http.post("https://api.serverseeker.net/servers")
+                    .exceptionHandler(e -> LOG.error("Network error: " + e.getMessage()))
+                    .bodyJson(request)
+                    .sendJson(ServersResponse.class);
 
-                ServersResponse resp = gson.fromJson(jsonResp, ServersResponse.class);
-
-                // Set error message if there is one
-                if (resp.isError()) {
-                    this.threadError = resp.error;
+                if (response == null) {
+                    ServerSeekerSystem.get().networkIssue = true;
+                    this.threadError = "Network error";
                     this.threadHasFinished = true;
                     return;
                 }
-                this.threadServers = resp.data;
+
+                // Set error message if there is one
+                if (response.isError()) {
+                    this.threadError = response.error;
+                    this.threadHasFinished = true;
+                    return;
+                }
+                this.threadServers = response.data;
                 this.threadHasFinished = true;
             });
         };

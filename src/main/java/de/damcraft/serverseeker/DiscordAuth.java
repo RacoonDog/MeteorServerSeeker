@@ -1,9 +1,11 @@
 package de.damcraft.serverseeker;
 
-import com.google.gson.JsonObject;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import de.damcraft.serverseeker.ssapi.requests.GetTokenRequest;
+import de.damcraft.serverseeker.ssapi.responses.GetTokenResponse;
+import meteordevelopment.meteorclient.utils.network.Http;
 import net.minecraft.util.Util;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
@@ -16,7 +18,6 @@ import java.util.List;
 import java.util.function.BiConsumer;
 
 import static de.damcraft.serverseeker.ServerSeeker.LOG;
-import static de.damcraft.serverseeker.ServerSeeker.gson;
 
 public class DiscordAuth {
     private static final int port = 7637;
@@ -108,36 +109,38 @@ public class DiscordAuth {
         public void handleCode(String code) {
             // Get the ServerSeeker auth token
 
-            JsonObject params = new JsonObject();
+            GetTokenRequest request = new GetTokenRequest(code, "meteor serverseeker");
 
-            params.addProperty("code", code);
-            params.addProperty("usage", "meteor serverseeker");
-
-            String jsonResp = SmallHttp.post("https://api.serverseeker.net/get_token", params.toString());
+            GetTokenResponse response = Http.post("https://api.serverseeker.net/get_token")
+                .exceptionHandler(e -> LOG.info("Network error: " + e.getMessage()))
+                .bodyJson(request)
+                .sendJson(GetTokenResponse.class);
 
             // {"api_key": "..."} or {"error": "..."}
 
-            JsonObject obj = gson.fromJson(jsonResp, JsonObject.class);
-
-            if (obj.has("error")) {
-                LOG.error("Error: " + obj.get("error").getAsString());
-                accept(null, obj.get("error").getAsString());
+            if (response == null) {
+                ServerSeekerSystem.get().networkIssue = true;
+                accept(null, "Network error");
                 return;
             }
-            if (!obj.has("api_key")) {
+
+            if (response.isError()) {
+                LOG.error("Error: " + response.error());
+                accept(null, response.error());
+                return;
+            } else if (response.apiKey() == null) {
                 LOG.error("Error: No api_key in response.");
                 accept(null, "No api_key in response.");
                 return;
             }
-            String apiKey = obj.get("api_key").getAsString();
 
             ServerSeekerSystem system = ServerSeekerSystem.get();
-            system.apiKey = apiKey;
+            system.apiKey = response.apiKey();
 
             system.refresh().thenAccept(userInfo -> {
                 accept(ServerSeekerSystem.get().apiKey, null);
             }).exceptionally(ex -> {
-                accept(null, ex.getMessage());;
+                accept(null, ex.getMessage());
                 return null;
             });
         }

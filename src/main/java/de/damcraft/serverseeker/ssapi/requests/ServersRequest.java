@@ -3,8 +3,6 @@ package de.damcraft.serverseeker.ssapi.requests;
 import com.google.gson.JsonArray;
 import de.damcraft.serverseeker.ServerSeekerSystem;
 
-import static de.damcraft.serverseeker.ServerSeeker.gson;
-
 public class ServersRequest {
     private final String api_key = ServerSeekerSystem.get().apiKey;
     private Integer asn;
@@ -95,9 +93,5 @@ public class ServersRequest {
 
     public void setOnlyBungeeSpoofable(Boolean only) {
         this.only_bungeespoofable = only;
-    }
-
-    public String json() {
-        return gson.toJson(this);
     }
 }

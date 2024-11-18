@@ -1,16 +1,16 @@
 package de.damcraft.serverseeker;
 
-import com.google.gson.JsonObject;
+import de.damcraft.serverseeker.ssapi.requests.UserInfoRequest;
 import de.damcraft.serverseeker.ssapi.responses.UserInfoResponse;
 import meteordevelopment.meteorclient.systems.System;
 import meteordevelopment.meteorclient.systems.Systems;
+import meteordevelopment.meteorclient.utils.network.Http;
 import meteordevelopment.meteorclient.utils.network.MeteorExecutor;
 import net.minecraft.nbt.NbtCompound;
 
 import java.util.concurrent.CompletableFuture;
 
 import static de.damcraft.serverseeker.ServerSeeker.LOG;
-import static de.damcraft.serverseeker.ServerSeeker.gson;
 
 public class ServerSeekerSystem extends System<ServerSeekerSystem> {
     public ServerSeekerSystem() {
@@ -45,12 +45,13 @@ public class ServerSeekerSystem extends System<ServerSeekerSystem> {
 
         // Execute refresh and cache future
         return future = CompletableFuture.supplyAsync(() -> {
-            JsonObject params = new JsonObject();
+            UserInfoRequest request = new UserInfoRequest(apiKey);
 
-            params.addProperty("api_key", apiKey);
+            UserInfoResponse response = Http.post("https://api.serverseeker.net/user_info")
+                .bodyJson(request)
+                .sendJson(UserInfoResponse.class);
 
-            String jsonResp = SmallHttp.post("https://api.serverseeker.net/user_info", params.toString());
-            if (jsonResp == null) {
+            if (response == null) {
                 LOG.error("Network error");
                 networkIssue = true;
                 throw new RuntimeException("Network error");
@@ -60,13 +61,12 @@ public class ServerSeekerSystem extends System<ServerSeekerSystem> {
             lastUpdate = java.lang.System.currentTimeMillis();
             future = null;
 
-            UserInfoResponse userInfo = gson.fromJson(jsonResp, UserInfoResponse.class);
-            if (userInfo.isError()) {
-                LOG.error("Error: " + userInfo.error);
-                throw new RuntimeException(userInfo.error);
+            if (response.isError()) {
+                LOG.error("Error: " + response.error);
+                throw new RuntimeException(response.error);
             }
 
-            return this.userInfo = userInfo;
+            return this.userInfo = response;
         }, MeteorExecutor.executor);
     }
 

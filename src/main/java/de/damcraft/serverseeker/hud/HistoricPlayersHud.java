@@ -117,16 +117,16 @@ public class HistoricPlayersHud extends HudElement {
         }
         // Sort players by join time (newest first)
         List<ServerInfoResponse.Player> players = new ArrayList<>(this.players);
-        players.sort((b, a) -> a.last_seen.compareTo(b.last_seen));
+        players.sort((b, a) -> a.lastSeen().compareTo(b.lastSeen()));
         for (ServerInfoResponse.Player player : players) {
-            if (alreadyDisplayed.contains(player.uuid)) continue;
+            if (alreadyDisplayed.contains(player.uuid())) continue;
             if (line >= limit.get()) {
                 more++;
                 continue;
             }
             // Convert last_seen to a human-readable format
             String unit = "s";
-            double last_seen = (int) (System.currentTimeMillis() / 1000 - player.last_seen);
+            double last_seen = (int) (System.currentTimeMillis() / 1000 - player.lastSeen());
             if (last_seen >= 60) {
                 last_seen /= 60;
                 unit = "min";
@@ -150,11 +150,11 @@ public class HistoricPlayersHud extends HudElement {
             // Round to 1 decimal place
             last_seen = Math.round(last_seen * 10) / 10.0;
 
-            double width = renderer.textWidth(player.name) + renderer.textWidth(" (" + last_seen + unit + ")");
+            double width = renderer.textWidth(player.name()) + renderer.textWidth(" (" + last_seen + unit + ")");
             double offset = alignX(width, alignment.get());
 
-            renderer.text(player.name, x + offset, y + line * renderer.textHeight(), historicPlayersColor.get(), true);
-            renderer.text(" (" + last_seen + unit + ")", x + offset + renderer.textWidth(player.name), y + line * renderer.textHeight(), historicPlayersLastSeenColor.get(), true);
+            renderer.text(player.name(), x + offset, y + line * renderer.textHeight(), historicPlayersColor.get(), true);
+            renderer.text(" (" + last_seen + unit + ")", x + offset + renderer.textWidth(player.name()), y + line * renderer.textHeight(), historicPlayersLastSeenColor.get(), true);
             line++;
 
             if (width > longestLine) longestLine = width;

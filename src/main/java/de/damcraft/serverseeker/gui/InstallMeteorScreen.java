@@ -67,7 +67,7 @@ public class InstallMeteorScreen extends Screen {
         } else if (currentVersion.equals(devBuildVersion)) {
             url = "https://meteorclient.com/api/download?devBuild=latest";
         } else {
-            this.displayError("Failed to find Meteor for your current version.");
+            this.displayError("Failed to find Meteor for your current version. Please install it manually.");
             return;
         }
         HttpResponse<InputStream> file = SmallHttp.download(url);

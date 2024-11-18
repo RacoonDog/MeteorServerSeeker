@@ -17,10 +17,12 @@ import meteordevelopment.meteorclient.systems.hud.Hud;
 import meteordevelopment.meteorclient.systems.modules.Category;
 import meteordevelopment.meteorclient.systems.modules.Modules;
 import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.loader.api.metadata.CustomValue;
 import net.minecraft.item.Items;
 import org.slf4j.Logger;
 
 import java.util.Map;
+import java.util.Optional;
 
 public class ServerSeeker extends MeteorAddon {
     /*
@@ -76,12 +78,13 @@ public class ServerSeeker extends MeteorAddon {
 
     @Override
     public String getCommit() {
-        String commit = FabricLoader
+        return Optional.ofNullable(FabricLoader
             .getInstance()
             .getModContainer("serverseeker")
-            .get().getMetadata()
-            .getCustomValue("github:sha")
-            .getAsString();
-        return commit.isEmpty() ? null : commit.trim();
+            .orElseThrow().getMetadata()
+            .getCustomValue("github:sha"))
+            .map(CustomValue::getAsString)
+            .map(String::trim)
+            .orElse(null);
     }
 }

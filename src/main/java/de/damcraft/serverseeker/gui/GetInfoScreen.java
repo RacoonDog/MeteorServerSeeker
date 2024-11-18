@@ -1,7 +1,6 @@
 package de.damcraft.serverseeker.gui;
 
 import de.damcraft.serverseeker.ServerSeekerSystem;
-import de.damcraft.serverseeker.SmallHttp;
 import de.damcraft.serverseeker.ssapi.requests.ServerInfoRequest;
 import de.damcraft.serverseeker.ssapi.responses.ServerInfoResponse;
 import meteordevelopment.meteorclient.gui.GuiThemes;
@@ -12,6 +11,7 @@ import meteordevelopment.meteorclient.gui.widgets.pressable.WButton;
 import meteordevelopment.meteorclient.systems.accounts.Account;
 import meteordevelopment.meteorclient.systems.accounts.Accounts;
 import meteordevelopment.meteorclient.systems.accounts.types.CrackedAccount;
+import meteordevelopment.meteorclient.utils.network.Http;
 import net.minecraft.client.gui.screen.multiplayer.MultiplayerScreen;
 import net.minecraft.client.gui.screen.multiplayer.MultiplayerServerListWidget;
 import net.minecraft.client.network.ServerInfo;
@@ -22,7 +22,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.List;
 
-import static de.damcraft.serverseeker.ServerSeeker.gson;
 import static meteordevelopment.meteorclient.MeteorClient.mc;
 
 public class GetInfoScreen extends WindowScreen {
@@ -69,8 +68,10 @@ public class GetInfoScreen extends WindowScreen {
             add(theme.label("You can only get player info for servers with an IP address"));
             return;
         }
-        String ip = address.split(":")[0];
-        int port = address.split(":").length > 1 ? Integer.parseInt(address.split(":")[1]) : 25565;
+
+        String[] addressParts = address.split(":");
+        String ip = addressParts[0];
+        int port = addressParts.length > 1 ? Integer.parseInt(addressParts[1]) : 25565;
 
         ServerSeekerSystem.get().invalidate();
 
@@ -80,23 +81,28 @@ public class GetInfoScreen extends WindowScreen {
           "ip": "109.123.240.84", // The ip of the server
           "port": 25565  // The port of the server (defaults to 25565)
         } */
-        ServerInfoRequest request = new ServerInfoRequest();
+        ServerInfoRequest request = new ServerInfoRequest(ServerSeekerSystem.get().apiKey, ip, port);
 
-        request.setIpPort(ip, port);
+        ServerInfoResponse response = Http.post("https://api.serverseeker.net/server_info")
+            .bodyJson(request)
+            .sendJson(ServerInfoResponse.class);
 
-        String jsonResp = SmallHttp.post("https://api.serverseeker.net/server_info", request.json());
-
-        ServerInfoResponse resp = gson.fromJson(jsonResp, ServerInfoResponse.class);
+        if (response == null) {
+            ServerSeekerSystem.get().networkIssue = true;
+            clear();
+            add(theme.label("Network error")).expandX();
+            return;
+        }
 
         // Set error message if there is one
-        if (resp.isError()) {
+        if (response.isError()) {
             clear();
-            add(theme.label(resp.error)).expandX();
+            add(theme.label(response.error())).expandX();
             return;
         }
 
         clear();
-        List<ServerInfoResponse.Player> players = resp.players;
+        List<ServerInfoResponse.Player> players = response.players();
         if (players.isEmpty()) {
             clear();
             add(theme.label("No records of players found.")).expandX();
@@ -110,8 +116,8 @@ public class GetInfoScreen extends WindowScreen {
             }, ...
           ] */
         boolean cracked = false;
-        if (resp.cracked != null) {
-            cracked = resp.cracked;
+        if (response.cracked() != null) {
+            cracked = response.cracked();
         }
 
         if (!cracked) {
@@ -132,8 +138,8 @@ public class GetInfoScreen extends WindowScreen {
         table.row();
 
         for (ServerInfoResponse.Player player : players) {
-            String name = player.name;
-            long lastSeen = player.last_seen;
+            String name = player.name();
+            long lastSeen = player.lastSeen();
             String lastSeenFormatted = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
                 .format(Instant.ofEpochSecond(lastSeen).atZone(ZoneId.systemDefault()).toLocalDateTime());
 

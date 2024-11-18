@@ -2,13 +2,13 @@ package de.damcraft.serverseeker.gui;
 
 import com.google.common.net.HostAndPort;
 import de.damcraft.serverseeker.ServerSeekerSystem;
-import de.damcraft.serverseeker.SmallHttp;
 import de.damcraft.serverseeker.ssapi.requests.ServerInfoRequest;
 import de.damcraft.serverseeker.ssapi.responses.ServerInfoResponse;
 import meteordevelopment.meteorclient.gui.GuiThemes;
 import meteordevelopment.meteorclient.gui.WindowScreen;
 import meteordevelopment.meteorclient.gui.widgets.containers.WTable;
 import meteordevelopment.meteorclient.gui.widgets.pressable.WButton;
+import meteordevelopment.meteorclient.utils.network.Http;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.TitleScreen;
 import net.minecraft.client.gui.screen.multiplayer.ConnectScreen;
@@ -21,7 +21,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.List;
 
-import static de.damcraft.serverseeker.ServerSeeker.gson;
 public class ServerInfoScreen extends WindowScreen {
     private final String serverIp;
 
@@ -34,28 +33,37 @@ public class ServerInfoScreen extends WindowScreen {
     public void initWidgets() {
         add(theme.label("Fetching server info..."));
 
-        ServerSeekerSystem.get().invalidate();
+        ServerSeekerSystem system = ServerSeekerSystem.get();
+        system.invalidate();
 
-        ServerInfoRequest request = new ServerInfoRequest();
         HostAndPort hap = HostAndPort.fromString(serverIp);
-        request.setIpPort(hap.getHost(), hap.getPort());
-        String jsonResp = SmallHttp.post("https://api.serverseeker.net/server_info", request.json());
-        ServerInfoResponse resp = gson.fromJson(jsonResp, ServerInfoResponse.class);
-        if (resp.isError()) {
-            clear();
-            add(theme.label(resp.error)).expandX();
-            return;
-        }
+        ServerInfoRequest request = new ServerInfoRequest(system.apiKey, hap.getHost(), hap.getPort());
+
+        ServerInfoResponse response = Http.post("https://api.serverseeker.net/server_info")
+            .bodyJson(request)
+            .sendJson(ServerInfoResponse.class);
+
         clear();
 
-        Boolean cracked = resp.cracked;
-        String description = resp.description;
-        int onlinePlayers = resp.online_players;
-        int maxPlayers = resp.max_players;
-        int protocol = resp.protocol;
-        int lastSeen = resp.last_seen;
-        String version = resp.version;
-        List<ServerInfoResponse.Player> players = resp.players;
+        if (response == null) {
+            ServerSeekerSystem.get().networkIssue = true;
+            add(theme.label("Network error")).expandX();
+            return;
+        }
+
+        if (response.isError()) {
+            add(theme.label(response.error())).expandX();
+            return;
+        }
+
+        Boolean cracked = response.cracked();
+        String description = response.description();
+        int onlinePlayers = response.onlinePlayers();
+        int maxPlayers = response.maxPlayers();
+        int protocol = response.protocol();
+        int lastSeen = response.lastSeen();
+        String version = response.version();
+        List<ServerInfoResponse.Player> players = response.players();
 
         WTable dataTable = add(theme.table()).widget();
         WTable playersTable = add(theme.table()).expandX().widget();
@@ -103,8 +111,8 @@ public class ServerInfoScreen extends WindowScreen {
         playersTable.row();
 
         for (ServerInfoResponse.Player player : players) {
-            String name = player.name;
-            long playerLastSeen = player.last_seen;
+            String name = player.name();
+            long playerLastSeen = player.lastSeen();
             String lastSeenFormatted = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
                 .format(Instant.ofEpochSecond(playerLastSeen).atZone(ZoneId.systemDefault()).toLocalDateTime());
 

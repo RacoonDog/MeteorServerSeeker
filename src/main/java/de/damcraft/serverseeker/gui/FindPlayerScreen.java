@@ -2,7 +2,6 @@ package de.damcraft.serverseeker.gui;
 
 import com.google.common.net.HostAndPort;
 import de.damcraft.serverseeker.ServerSeekerSystem;
-import de.damcraft.serverseeker.SmallHttp;
 import de.damcraft.serverseeker.ssapi.requests.WhereisRequest;
 import de.damcraft.serverseeker.ssapi.responses.WhereisResponse;
 import de.damcraft.serverseeker.utils.MultiplayerScreenUtil;
@@ -12,6 +11,7 @@ import meteordevelopment.meteorclient.gui.widgets.containers.WContainer;
 import meteordevelopment.meteorclient.gui.widgets.containers.WTable;
 import meteordevelopment.meteorclient.gui.widgets.pressable.WButton;
 import meteordevelopment.meteorclient.settings.*;
+import meteordevelopment.meteorclient.utils.network.Http;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.TitleScreen;
 import net.minecraft.client.gui.screen.multiplayer.ConnectScreen;
@@ -25,7 +25,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.List;
 
-import static de.damcraft.serverseeker.ServerSeeker.gson;
+import static de.damcraft.serverseeker.ServerSeeker.LOG;
 import static meteordevelopment.meteorclient.MeteorClient.mc;
 
 public class FindPlayerScreen extends WindowScreen {
@@ -86,19 +86,27 @@ public class FindPlayerScreen extends WindowScreen {
                 case UUID -> request.setUuid(uuid.get());
             }
 
-            String jsonResponse = SmallHttp.post("https://api.serverseeker.net/whereis", request.json());
+            WhereisResponse response = Http.post("https://api.serverseeker.net/whereis")
+                .exceptionHandler(e -> LOG.error("Network error: " + e.getMessage()))
+                .bodyJson(request.json())
+                .sendJson(WhereisResponse.class);
 
-            WhereisResponse resp = gson.fromJson(jsonResponse, WhereisResponse.class);
+            if (response == null) {
+                clear();
+                add(theme.label("Network error")).expandX();
+                ServerSeekerSystem.get().networkIssue = true;
+                return;
+            }
 
             // Set error message if there is one
-            if (resp.isError()) {
+            if (response.isError()) {
                 clear();
-                add(theme.label(resp.error)).expandX();
+                add(theme.label(response.error)).expandX();
                 return;
             }
             clear();
 
-            List<WhereisResponse.Record> data = resp.data;
+            List<WhereisResponse.Record> data = response.data;
             if (data.isEmpty()) {
                 clear();
                 add(theme.label("Not found")).expandX();
