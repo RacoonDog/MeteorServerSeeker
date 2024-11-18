@@ -30,8 +30,16 @@ dependencies {
 }
 
 processResources {
+    var projectProperties = [
+        "version": project.version,
+        "mc_version": project.minecraft_version,
+        "gh_hash": System.getenv("GITHUB_SHA") ?: ""
+    ]
+
+    inputs.properties(projectProperties)
+
     filesMatching("fabric.mod.json") {
-        expand "version": project.version, "mc_version": project.minecraft_version, "gh_hash": (System.getenv("GITHUB_SHA") ?: "")
+        expand(projectProperties)
     }
 }
 
