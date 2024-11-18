@@ -1,4 +1,4 @@
-<a href="https://github.com/RacoonDog/MeteorServerSeeker/releases/download/4.5.0/server-seeker-4.5.0.jar">
+<a href="https://github.com/RacoonDog/MeteorServerSeeker/releases/tag/snapshot">
     <img src="https://custom-icon-badges.demolab.com/badge/-Download-2b2b2b?style=for-the-badge&logo=download&logoColor=white" width=2000 >
 </a>
 
