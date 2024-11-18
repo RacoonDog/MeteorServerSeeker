@@ -18,6 +18,8 @@ import net.minecraft.client.gui.screen.multiplayer.MultiplayerScreen;
 import net.minecraft.client.gui.screen.multiplayer.MultiplayerServerListWidget;
 import net.minecraft.client.network.ServerInfo;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -62,8 +64,13 @@ public class GetInfoScreen extends WindowScreen {
 
         // Check if the server matches the regex for ip(:port)
         if (!address.matches("^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}(?::[0-9]{1,5})?$")) {
-            add(theme.label("You can only get player info for servers with an IP address"));
-            return;
+            try {
+                InetAddress inetAddress = InetAddress.getByName(address);
+                address = inetAddress.getHostAddress();
+            } catch (UnknownHostException e) {
+                add(theme.label("You can only get player info for servers with an IP address"));
+                return;
+            }
         }
 
         add(theme.label("Loading..."));
