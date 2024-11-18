@@ -45,20 +45,23 @@ public class ServerInfoScreen extends WindowScreen {
                 .sendJson(ServerInfoResponse.class);
 
             ServerSeekerSystem.get().invalidate();
-            clear();
 
-            if (response == null) {
-                ServerSeekerSystem.get().networkIssue = true;
-                add(theme.label("Network error")).expandX();
-                return;
-            }
+            this.client.execute(() -> {
+                clear();
 
-            if (response.isError()) {
-                add(theme.label(response.error())).expandX();
-                return;
-            }
+                if (response == null) {
+                    ServerSeekerSystem.get().networkIssue = true;
+                    add(theme.label("Network error")).expandX();
+                    return;
+                }
 
-            load(response, hap);
+                if (response.isError()) {
+                    add(theme.label(response.error())).expandX();
+                    return;
+                }
+
+                load(response, hap);
+            });
         });
     }
 

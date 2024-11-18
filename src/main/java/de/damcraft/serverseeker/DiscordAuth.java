@@ -6,6 +6,7 @@ import com.sun.net.httpserver.HttpServer;
 import de.damcraft.serverseeker.ssapi.requests.GetTokenRequest;
 import de.damcraft.serverseeker.ssapi.responses.GetTokenResponse;
 import meteordevelopment.meteorclient.utils.network.Http;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.util.Util;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
@@ -61,8 +62,10 @@ public class DiscordAuth {
     }
 
     private static void accept(String result, String exception) {
-        callback.accept(result, exception);
-        callback = null;
+        MinecraftClient.getInstance().execute(() -> {
+            callback.accept(result, exception);
+            callback = null;
+        });
     }
 
     private static class AuthHandler implements HttpHandler {

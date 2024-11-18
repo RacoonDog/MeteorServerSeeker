@@ -12,6 +12,8 @@ import meteordevelopment.meteorclient.systems.accounts.Account;
 import meteordevelopment.meteorclient.systems.accounts.Accounts;
 import meteordevelopment.meteorclient.systems.accounts.types.CrackedAccount;
 import meteordevelopment.meteorclient.utils.network.Http;
+import meteordevelopment.meteorclient.utils.network.MeteorExecutor;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.multiplayer.MultiplayerScreen;
 import net.minecraft.client.gui.screen.multiplayer.MultiplayerServerListWidget;
 import net.minecraft.client.network.ServerInfo;
@@ -37,11 +39,6 @@ public class GetInfoScreen extends WindowScreen {
 
     @Override
     public void initWidgets() {
-        if (entry == null) {
-            add(theme.label("No server selected"));
-            return;
-        }
-
         String apiKey = ServerSeekerSystem.get().apiKey;
         if (apiKey.isEmpty()) {
             WHorizontalList widgetList = add(theme.horizontalList()).expandX().widget();
@@ -56,7 +53,7 @@ public class GetInfoScreen extends WindowScreen {
         }
 
         // Get info about the server
-        if (!(entry instanceof MultiplayerServerListWidget.ServerEntry)) {
+        if (entry == null || !(entry instanceof MultiplayerServerListWidget.ServerEntry)) {
             add(theme.label("No server selected"));
             return;
         }
@@ -69,11 +66,11 @@ public class GetInfoScreen extends WindowScreen {
             return;
         }
 
+        add(theme.label("Loading..."));
+
         String[] addressParts = address.split(":");
         String ip = addressParts[0];
         int port = addressParts.length > 1 ? Integer.parseInt(addressParts[1]) : 25565;
-
-        ServerSeekerSystem.get().invalidate();
 
         // Get the players using the API
         /* {
@@ -83,28 +80,36 @@ public class GetInfoScreen extends WindowScreen {
         } */
         ServerInfoRequest request = new ServerInfoRequest(ServerSeekerSystem.get().apiKey, ip, port);
 
-        ServerInfoResponse response = Http.post("https://api.serverseeker.net/server_info")
-            .bodyJson(request)
-            .sendJson(ServerInfoResponse.class);
+        MeteorExecutor.execute(() -> {
+            ServerInfoResponse response = Http.post("https://api.serverseeker.net/server_info")
+                .bodyJson(request)
+                .sendJson(ServerInfoResponse.class);
 
-        if (response == null) {
-            ServerSeekerSystem.get().networkIssue = true;
-            clear();
-            add(theme.label("Network error")).expandX();
-            return;
-        }
+            ServerSeekerSystem.get().invalidate();
 
-        // Set error message if there is one
-        if (response.isError()) {
-            clear();
-            add(theme.label(response.error())).expandX();
-            return;
-        }
+            MinecraftClient.getInstance().execute(() -> {
+                clear();
 
-        clear();
+                if (response == null) {
+                    ServerSeekerSystem.get().networkIssue = true;
+                    add(theme.label("Network error")).expandX();
+                    return;
+                }
+
+                // Set error message if there is one
+                if (response.isError()) {
+                    add(theme.label(response.error())).expandX();
+                    return;
+                }
+
+                load(response);
+            });
+        });
+    }
+
+    private void load(ServerInfoResponse response) {
         List<ServerInfoResponse.Player> players = response.players();
         if (players.isEmpty()) {
-            clear();
             add(theme.label("No records of players found.")).expandX();
             return;
         }

@@ -12,6 +12,7 @@ import meteordevelopment.meteorclient.gui.widgets.containers.WTable;
 import meteordevelopment.meteorclient.gui.widgets.pressable.WButton;
 import meteordevelopment.meteorclient.settings.*;
 import meteordevelopment.meteorclient.utils.network.Http;
+import meteordevelopment.meteorclient.utils.network.MeteorExecutor;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.TitleScreen;
 import net.minecraft.client.gui.screen.multiplayer.ConnectScreen;
@@ -77,8 +78,6 @@ public class FindPlayerScreen extends WindowScreen {
         this.settingsContainer = settingsContainer;
 
         add(theme.button("Find Player")).expandX().widget().action = () -> {
-            ServerSeekerSystem.get().invalidate();
-
             WhereisRequest request = new WhereisRequest();
 
             switch (nameOrUUID.get()) {
@@ -86,82 +85,90 @@ public class FindPlayerScreen extends WindowScreen {
                 case UUID -> request.setUuid(uuid.get());
             }
 
-            WhereisResponse response = Http.post("https://api.serverseeker.net/whereis")
-                .exceptionHandler(e -> LOG.error("Network error: " + e.getMessage()))
-                .bodyJson(request.json())
-                .sendJson(WhereisResponse.class);
+            MeteorExecutor.execute(() -> {
+                WhereisResponse response = Http.post("https://api.serverseeker.net/whereis")
+                    .exceptionHandler(e -> LOG.error("Network error: " + e.getMessage()))
+                    .bodyJson(request.json())
+                    .sendJson(WhereisResponse.class);
 
-            if (response == null) {
-                clear();
-                add(theme.label("Network error")).expandX();
-                ServerSeekerSystem.get().networkIssue = true;
-                return;
-            }
+                MinecraftClient.getInstance().execute(() -> {
+                    if (response == null) {
+                        add(theme.label("Network error")).expandX();
+                        ServerSeekerSystem.get().networkIssue = true;
+                        return;
+                    }
 
-            // Set error message if there is one
-            if (response.isError()) {
-                clear();
-                add(theme.label(response.error)).expandX();
-                return;
-            }
-            clear();
+                    ServerSeekerSystem.get().invalidate();
 
-            List<WhereisResponse.Record> data = response.data;
-            if (data.isEmpty()) {
-                clear();
-                add(theme.label("Not found")).expandX();
-                return;
-            }
-            add(theme.label("Found " + data.size() + " servers:"));
-            WTable table = add(theme.table()).widget();
-            WButton addAllButton = table.add(theme.button("Add all")).expandX().widget();
-            addAllButton.action = () -> addAllServers(data);
+                    // Set error message if there is one
+                    if (response.isError()) {
+                        add(theme.label(response.error)).expandX();
+                        return;
+                    }
+                    clear();
 
-            table.row();
-            table.add(theme.label("Server IP"));
-            table.add(theme.label("Player name"));
-            table.add(theme.label("Last seen"));
+                    List<WhereisResponse.Record> data = response.data;
+                    if (data.isEmpty()) {
+                        add(theme.label("Not found")).expandX();
+                        return;
+                    }
 
-            table.row();
-            table.add(theme.horizontalSeparator()).expandX();
-            table.row();
-
-
-            for (WhereisResponse.Record server : data) {
-                String serverIP = server.server;
-                String playerName = server.name;
-                long playerLastSeen = server.last_seen; // Unix timestamp
-
-                // Format last seen to human-readable
-                String playerLastSeenFormatted = DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)
-                    .format(Instant.ofEpochSecond(playerLastSeen).atZone(ZoneId.systemDefault()).toLocalDateTime());
-                int minWidth = (int)(mc.getWindow().getWidth() * 0.2);
-                table.add(theme.label(serverIP)).minWidth(minWidth);
-                table.add(theme.label(playerName)).minWidth(minWidth);
-                table.add(theme.label(playerLastSeenFormatted)).minWidth(minWidth);
-
-                WButton addServerButton = theme.button("Add Server");
-                addServerButton.action = () -> {
-                    ServerInfo info = new ServerInfo("ServerSeeker " + serverIP + " (Player: " + playerName + ")", serverIP, ServerInfo.ServerType.OTHER);
-                    MultiplayerScreenUtil.addInfoToServerList(multiplayerScreen, info);
-                    addServerButton.visible = false;
-                };
-
-                HostAndPort hap = HostAndPort.fromString(serverIP);
-                WButton joinServerButton = theme.button("Join Server");
-                joinServerButton.action = () -> {
-                    ConnectScreen.connect(new TitleScreen(), MinecraftClient.getInstance(), new ServerAddress(hap.getHost(), hap.getPort()), new ServerInfo("a", hap.toString(), ServerInfo.ServerType.OTHER), false, null);
-                };
-
-                WButton serverInfoButton = theme.button("Server Info");
-                serverInfoButton.action = () -> this.client.setScreen(new ServerInfoScreen(serverIP));
-
-                table.add(addServerButton);
-                table.add(joinServerButton);
-                table.add(serverInfoButton);
-                table.row();
-            }
+                    load(data);
+                });
+            });
         };
+    }
+
+    private void load(List<WhereisResponse.Record> data) {
+        add(theme.label("Found " + data.size() + " servers:"));
+        WTable table = add(theme.table()).widget();
+        WButton addAllButton = table.add(theme.button("Add all")).expandX().widget();
+        addAllButton.action = () -> addAllServers(data);
+
+        table.row();
+        table.add(theme.label("Server IP"));
+        table.add(theme.label("Player name"));
+        table.add(theme.label("Last seen"));
+
+        table.row();
+        table.add(theme.horizontalSeparator()).expandX();
+        table.row();
+
+
+        for (WhereisResponse.Record server : data) {
+            String serverIP = server.server;
+            String playerName = server.name;
+            long playerLastSeen = server.last_seen; // Unix timestamp
+
+            // Format last seen to human-readable
+            String playerLastSeenFormatted = DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)
+                .format(Instant.ofEpochSecond(playerLastSeen).atZone(ZoneId.systemDefault()).toLocalDateTime());
+            int minWidth = (int)(mc.getWindow().getWidth() * 0.2);
+            table.add(theme.label(serverIP)).minWidth(minWidth);
+            table.add(theme.label(playerName)).minWidth(minWidth);
+            table.add(theme.label(playerLastSeenFormatted)).minWidth(minWidth);
+
+            WButton addServerButton = theme.button("Add Server");
+            addServerButton.action = () -> {
+                ServerInfo info = new ServerInfo("ServerSeeker " + serverIP + " (Player: " + playerName + ")", serverIP, ServerInfo.ServerType.OTHER);
+                MultiplayerScreenUtil.addInfoToServerList(multiplayerScreen, info);
+                addServerButton.visible = false;
+            };
+
+            HostAndPort hap = HostAndPort.fromString(serverIP);
+            WButton joinServerButton = theme.button("Join Server");
+            joinServerButton.action = () -> {
+                ConnectScreen.connect(new TitleScreen(), MinecraftClient.getInstance(), new ServerAddress(hap.getHost(), hap.getPort()), new ServerInfo("a", hap.toString(), ServerInfo.ServerType.OTHER), false, null);
+            };
+
+            WButton serverInfoButton = theme.button("Server Info");
+            serverInfoButton.action = () -> this.client.setScreen(new ServerInfoScreen(serverIP));
+
+            table.add(addServerButton);
+            table.add(joinServerButton);
+            table.add(serverInfoButton);
+            table.row();
+        }
     }
 
     private void addAllServers(List<WhereisResponse.Record> records) {
