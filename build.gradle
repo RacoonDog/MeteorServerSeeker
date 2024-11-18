@@ -33,7 +33,7 @@ processResources {
     var projectProperties = [
         "version": project.version,
         "mc_version": project.minecraft_version,
-        "gh_hash": System.getenv("GITHUB_SHA") ?: ""
+        "commit": project.findProperty("commit") ?: ""
     ]
 
     inputs.properties(projectProperties)

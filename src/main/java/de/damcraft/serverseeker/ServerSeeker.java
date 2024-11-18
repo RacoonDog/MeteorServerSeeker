@@ -66,7 +66,7 @@ public class ServerSeeker extends MeteorAddon {
 
     @Override
     public GithubRepo getRepo() {
-        return new GithubRepo("DAMcraft", "MeteorServerSeeker");
+        return new GithubRepo("RacoonDog", "MeteorServerSeeker");
     }
 
     @Override

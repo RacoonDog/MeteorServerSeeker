@@ -13,7 +13,7 @@ jobs:
           java-version: 21
           distribution: 'temurin'
       - name: Build
-        run: ./gradlew build
+        run: ./gradlew build -Pcommit=${{ github.sha }}
       - name: Release
         uses: marvinpinto/action-automatic-releases@latest
         with:
