@@ -2,6 +2,7 @@ package de.damcraft.serverseeker.gui;
 
 import com.google.common.net.HostAndPort;
 import de.damcraft.serverseeker.ServerSeeker;
+import de.damcraft.serverseeker.ServerSeekerSystem;
 import de.damcraft.serverseeker.SmallHttp;
 import de.damcraft.serverseeker.country.Country;
 import de.damcraft.serverseeker.country.CountrySetting;
@@ -353,6 +354,8 @@ public class FindNewServersScreen extends WindowScreen {
 
 
             MeteorExecutor.execute(() -> {
+                ServerSeekerSystem.get().invalidate();
+
                 String jsonResp = SmallHttp.post("https://api.serverseeker.net/servers", request.json());
 
                 ServersResponse resp = gson.fromJson(jsonResp, ServersResponse.class);
@@ -467,7 +470,6 @@ public class FindNewServersScreen extends WindowScreen {
 
             WButton addServerButton = theme.button("Add Server");
             addServerButton.action = () -> {
-                System.out.println(multiplayerScreen.getServerList() == null);
                 ServerInfo info = new ServerInfo("ServerSeeker " + serverIP, serverIP, ServerInfo.ServerType.OTHER);
                 MultiplayerScreenUtil.addInfoToServerList(multiplayerScreen, info);
                 addServerButton.visible = false;

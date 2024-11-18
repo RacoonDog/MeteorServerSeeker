@@ -1,6 +1,7 @@
 package de.damcraft.serverseeker.gui;
 
 import com.google.common.net.HostAndPort;
+import de.damcraft.serverseeker.ServerSeekerSystem;
 import de.damcraft.serverseeker.SmallHttp;
 import de.damcraft.serverseeker.ssapi.requests.ServerInfoRequest;
 import de.damcraft.serverseeker.ssapi.responses.ServerInfoResponse;
@@ -32,6 +33,9 @@ public class ServerInfoScreen extends WindowScreen {
     @Override
     public void initWidgets() {
         add(theme.label("Fetching server info..."));
+
+        ServerSeekerSystem.get().invalidate();
+
         ServerInfoRequest request = new ServerInfoRequest();
         HostAndPort hap = HostAndPort.fromString(serverIp);
         request.setIpPort(hap.getHost(), hap.getPort());

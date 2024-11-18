@@ -4,8 +4,6 @@ import com.google.gson.JsonObject;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import de.damcraft.serverseeker.ssapi.responses.UserInfoResponse;
-import meteordevelopment.meteorclient.systems.Systems;
 import net.minecraft.util.Util;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
@@ -59,7 +57,10 @@ public class DiscordAuth {
 
         server.stop(0);
         server = null;
+    }
 
+    private static void accept(String result, String exception) {
+        callback.accept(result, exception);
         callback = null;
     }
 
@@ -119,48 +120,26 @@ public class DiscordAuth {
             JsonObject obj = gson.fromJson(jsonResp, JsonObject.class);
 
             if (obj.has("error")) {
-                System.out.println("Error: " + obj.get("error").getAsString());
-                callback.accept(null, obj.get("error").getAsString());
+                LOG.error("Error: " + obj.get("error").getAsString());
+                accept(null, obj.get("error").getAsString());
                 return;
             }
             if (!obj.has("api_key")) {
-                System.out.println("Error: No api_key in response.");
-                callback.accept(null, "No api_key in response.");
+                LOG.error("Error: No api_key in response.");
+                accept(null, "No api_key in response.");
                 return;
             }
             String apiKey = obj.get("api_key").getAsString();
-            Systems.get(ServerSeekerSystem.class).apiKey = apiKey;
 
-            // Get the discord user info
-            params = new JsonObject();
+            ServerSeekerSystem system = ServerSeekerSystem.get();
+            system.apiKey = apiKey;
 
-            params.addProperty("api_key", apiKey);
-
-            jsonResp = SmallHttp.post("https://api.serverseeker.net/user_info", params.toString());
-
-            // {
-            //                "discord_id": user_id,
-            //                "discord_username": discord_username,
-            //                "discord_avatar_url": avatar_url
-            //            } or {"error": "..."}
-
-            UserInfoResponse userInfo = gson.fromJson(jsonResp, UserInfoResponse.class);
-
-            if (userInfo.isError()) {
-                System.out.println("Error: " + userInfo.error);
-                callback.accept(null, userInfo.error);
-                return;
-            }
-
-            String discordId = userInfo.discord_id;
-            String discordUsername = userInfo.discord_username;
-            String discordAvatarUrl = userInfo.discord_avatar_url;
-
-            Systems.get(ServerSeekerSystem.class).discordId = discordId;
-            Systems.get(ServerSeekerSystem.class).discordUsername = discordUsername;
-            Systems.get(ServerSeekerSystem.class).discordAvatarUrl = discordAvatarUrl == null ? "" : discordAvatarUrl;
-
-            callback.accept(apiKey, null);
+            system.refresh().thenAccept(userInfo -> {
+                accept(ServerSeekerSystem.get().apiKey, null);
+            }).exceptionally(ex -> {
+                accept(null, ex.getMessage());;
+                return null;
+            });
         }
     }
 }

@@ -1,11 +1,9 @@
 package de.damcraft.serverseeker;
 
-import com.google.gson.JsonObject;
 import com.mojang.blaze3d.systems.RenderSystem;
-import de.damcraft.serverseeker.ssapi.responses.UserInfoResponse;
 import meteordevelopment.meteorclient.renderer.Texture;
-import meteordevelopment.meteorclient.systems.Systems;
 import meteordevelopment.meteorclient.utils.network.Http;
+import meteordevelopment.meteorclient.utils.network.MeteorExecutor;
 import org.lwjgl.BufferUtils;
 
 import javax.imageio.ImageIO;
@@ -15,66 +13,84 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 
 import static de.damcraft.serverseeker.ServerSeeker.LOG;
-import static de.damcraft.serverseeker.ServerSeeker.gson;
 
 public class DiscordAvatar extends Texture {
-    public DiscordAvatar(String url) {
-        BufferedImage avatar;
-        try {
-            InputStream stream = Http.get(url).sendInputStream();
-            if (stream == null) {
-                JsonObject params = new JsonObject();
+    private static DiscordAvatar avatar;
 
-                params.addProperty("api_key", Systems.get(ServerSeekerSystem.class).apiKey);
+    private volatile String url;
+    private long lastUpdate = -1;
 
-                String jsonResp = SmallHttp.post("https://api.serverseeker.net/user_info", params.toString());
+    private DiscordAvatar() {
+        MeteorExecutor.execute(this::updateUserInfo);
+    }
 
-                UserInfoResponse userInfo = gson.fromJson(jsonResp, UserInfoResponse.class);
-                if (userInfo.isError()) {
-                    System.out.println("Error: " + userInfo.error);
-                    return;
+    public static DiscordAvatar get() {
+        if (avatar == null) {
+            avatar = new DiscordAvatar();
+        } else {
+            avatar.update();
+        }
+        return avatar;
+    }
+
+    private void update() {
+        if (System.currentTimeMillis() - lastUpdate >= 120 * 1000) {
+            MeteorExecutor.execute(this::updateUserInfo);
+        }
+
+        MeteorExecutor.execute(() -> load(ServerSeekerSystem.get().userInfo.discord_avatar_url));
+    }
+
+    private void updateUserInfo() {
+        lastUpdate = System.currentTimeMillis();
+
+        ServerSeekerSystem.get().refresh().thenRun(() -> {
+            String avatarUrl = ServerSeekerSystem.get().userInfo.discord_avatar_url;
+            if (!avatarUrl.isEmpty()) load(avatarUrl);
+        });
+    }
+
+    private void load(String avatarUrl) {
+        if (this.url != null && this.url.equals(avatarUrl)) return;
+        this.url = avatarUrl;
+
+        if (avatarUrl.isEmpty()) {
+            avatarUrl = "https://cdn.discordapp.com/embed/avatars/1.png?size=32";
+        } else {
+            avatarUrl += "?size=32";
+        }
+
+        try (InputStream stream = Http.get(avatarUrl)
+            .exceptionHandler(e -> LOG.error("Network error: " + e.getMessage()))
+            .sendInputStream()) {
+            if (stream == null) return;
+
+            BufferedImage avatarImage = ImageIO.read(stream);
+
+            byte[] data = new byte[avatarImage.getWidth() * avatarImage.getHeight() * 3];
+            int[] pixel = new int[4];
+            int i = 0;
+
+            for (int y = 0; y < avatarImage.getHeight(); y++) {
+                for (int x = 0; x < avatarImage.getWidth(); x++) {
+                    avatarImage.getData().getPixel(x, y, pixel);
+
+                    for (int j = 0; j < 3; j++) {
+                        data[i] = (byte) pixel[j];
+                        i++;
+                    }
                 }
-                String discordId = userInfo.discord_id;
-                String discordUsername = userInfo.discord_username;
-                String discordAvatarUrl = userInfo.discord_avatar_url == null ? "" : userInfo.discord_avatar_url;
-
-                Systems.get(ServerSeekerSystem.class).discordId = discordId;
-                Systems.get(ServerSeekerSystem.class).discordUsername = discordUsername;
-                Systems.get(ServerSeekerSystem.class).discordAvatarUrl = discordAvatarUrl;
-
-                stream = Http.get(discordAvatarUrl).sendInputStream();
             }
-            if (stream == null) {
-                System.err.println("Failed to get avatar, are you Vero?");
-                return;
-            }
-            avatar = ImageIO.read(stream);
+
+            RenderSystem.recordRenderCall(() -> {
+                upload(BufferUtils.createByteBuffer(data.length).put(data));
+            });
         } catch (IOException e) {
-            LOG.error(e.toString());
-            return;
+            throw new RuntimeException(e);
         }
-
-        byte[] data = new byte[avatar.getWidth() * avatar.getHeight() * 3];
-        int[] pixel = new int[4];
-        int i = 0;
-
-        for (int y = 0; y < avatar.getHeight(); y++) {
-            for (int x = 0; x < avatar.getWidth(); x++) {
-                avatar.getData().getPixel(x, y, pixel);
-
-                for (int j = 0; j < 3; j++) {
-                    data[i] = (byte) pixel[j];
-                    i++;
-                }
-            }
-        }
-
-        upload(BufferUtils.createByteBuffer(data.length).put(data));
     }
 
     private void upload(ByteBuffer data) {
-        Runnable action = () -> upload(32, 32, data, Texture.Format.RGB, Texture.Filter.Nearest, Texture.Filter.Nearest, false);
-        if (RenderSystem.isOnRenderThread()) action.run();
-        else RenderSystem.recordRenderCall(action::run);
+        upload(32, 32, data, Texture.Format.RGB, Texture.Filter.Nearest, Texture.Filter.Nearest, false);
     }
 }

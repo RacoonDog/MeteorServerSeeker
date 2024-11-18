@@ -72,6 +72,8 @@ public class GetInfoScreen extends WindowScreen {
         String ip = address.split(":")[0];
         int port = address.split(":").length > 1 ? Integer.parseInt(address.split(":")[1]) : 25565;
 
+        ServerSeekerSystem.get().invalidate();
+
         // Get the players using the API
         /* {
           "api_key": "...", // Your api_key

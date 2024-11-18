@@ -1,6 +1,7 @@
 package de.damcraft.serverseeker.gui;
 
 import com.google.common.net.HostAndPort;
+import de.damcraft.serverseeker.ServerSeekerSystem;
 import de.damcraft.serverseeker.SmallHttp;
 import de.damcraft.serverseeker.ssapi.requests.WhereisRequest;
 import de.damcraft.serverseeker.ssapi.responses.WhereisResponse;
@@ -76,6 +77,7 @@ public class FindPlayerScreen extends WindowScreen {
         this.settingsContainer = settingsContainer;
 
         add(theme.button("Find Player")).expandX().widget().action = () -> {
+            ServerSeekerSystem.get().invalidate();
 
             WhereisRequest request = new WhereisRequest();
 
