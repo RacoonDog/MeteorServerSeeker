@@ -9,6 +9,7 @@ import meteordevelopment.meteorclient.gui.widgets.containers.WHorizontalList;
 import meteordevelopment.meteorclient.gui.widgets.containers.WTable;
 import meteordevelopment.meteorclient.gui.widgets.pressable.WButton;
 import meteordevelopment.meteorclient.utils.render.color.Color;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.multiplayer.MultiplayerScreen;
 
 public class ServerSeekerScreen extends WindowScreen {
@@ -20,7 +21,7 @@ public class ServerSeekerScreen extends WindowScreen {
     }
     private WButton refreshButton;
     private volatile boolean waitingForAuth = false;
-    private volatile boolean waitingForRefreh = false;
+    private volatile boolean waitingForRefresh = false;
 
     @Override
     public void initWidgets() {
@@ -43,10 +44,12 @@ public class ServerSeekerScreen extends WindowScreen {
             widgetList.add(theme.label("Could not connect to the ServerSeeker api servers."));
             refreshButton = widgetList.add(theme.button("Refresh")).widget();
             refreshButton.action = () -> {
-                waitingForRefreh = true;
+                waitingForRefresh = true;
                 ServerSeekerSystem.get().refresh().thenRun(() -> {
-                    waitingForRefreh = false;
-                    this.reload();
+                    MinecraftClient.getInstance().execute(() -> {
+                        waitingForRefresh = false;
+                        this.reload();
+                    });
                 });
             };
             return;
@@ -67,27 +70,29 @@ public class ServerSeekerScreen extends WindowScreen {
         userInfoList.add(theme.label("Loading..."));
 
         ServerSeekerSystem.get().refresh().thenRun(() -> {
-            userInfoList.clear();
+            MinecraftClient.getInstance().execute(() -> {
+                userInfoList.clear();
 
-            userInfoList.add(theme.label("Requests made:"));
-            userInfoList.row();
+                userInfoList.add(theme.label("Requests made:"));
+                userInfoList.row();
 
-            int whereisRequestsMade = ServerSeekerSystem.get().userInfo.requests_made_whereis;
-            int whereisRequestsTotal = ServerSeekerSystem.get().userInfo.requests_per_day_whereis;
-            userInfoList.add(theme.label("Whereis: "));
-            userInfoList.add(theme.label(whereisRequestsMade + "/" + whereisRequestsTotal)).widget().color(whereisRequestsTotal == whereisRequestsMade ? Color.RED : Color.WHITE);
-            userInfoList.row();
+                int whereisRequestsMade = ServerSeekerSystem.get().userInfo.requests_made_whereis;
+                int whereisRequestsTotal = ServerSeekerSystem.get().userInfo.requests_per_day_whereis;
+                userInfoList.add(theme.label("Whereis: "));
+                userInfoList.add(theme.label(whereisRequestsMade + "/" + whereisRequestsTotal)).widget().color(whereisRequestsTotal == whereisRequestsMade ? Color.RED : Color.WHITE);
+                userInfoList.row();
 
-            int serversRequestsMade = ServerSeekerSystem.get().userInfo.requests_made_servers;
-            int serversRequestsTotal = ServerSeekerSystem.get().userInfo.requests_per_day_servers;
-            userInfoList.add(theme.label("Servers: "));
-            userInfoList.add(theme.label(serversRequestsMade + "/" + serversRequestsTotal)).widget().color(serversRequestsTotal == serversRequestsMade ? Color.RED : Color.WHITE);
-            userInfoList.row();
+                int serversRequestsMade = ServerSeekerSystem.get().userInfo.requests_made_servers;
+                int serversRequestsTotal = ServerSeekerSystem.get().userInfo.requests_per_day_servers;
+                userInfoList.add(theme.label("Servers: "));
+                userInfoList.add(theme.label(serversRequestsMade + "/" + serversRequestsTotal)).widget().color(serversRequestsTotal == serversRequestsMade ? Color.RED : Color.WHITE);
+                userInfoList.row();
 
-            int serverInfoRequestsMade = ServerSeekerSystem.get().userInfo.requests_made_server_info;
-            int serverInfoRequestsTotal = ServerSeekerSystem.get().userInfo.requests_per_day_server_info;
-            userInfoList.add(theme.label("Server Info: "));
-            userInfoList.add(theme.label(serverInfoRequestsMade + "/" + serverInfoRequestsTotal)).widget().color(serverInfoRequestsTotal == serverInfoRequestsMade ? Color.RED : Color.WHITE);
+                int serverInfoRequestsMade = ServerSeekerSystem.get().userInfo.requests_made_server_info;
+                int serverInfoRequestsTotal = ServerSeekerSystem.get().userInfo.requests_per_day_server_info;
+                userInfoList.add(theme.label("Server Info: "));
+                userInfoList.add(theme.label(serverInfoRequestsMade + "/" + serverInfoRequestsTotal)).widget().color(serverInfoRequestsTotal == serverInfoRequestsMade ? Color.RED : Color.WHITE);
+            });
         });
 
 
@@ -124,7 +129,7 @@ public class ServerSeekerScreen extends WindowScreen {
 
     @Override
     public void tick() {
-        if (waitingForRefreh) {
+        if (waitingForRefresh) {
             refreshButton.set(switch (refreshButton.getText()) {
                 default -> "ooo";
                 case "ooo" -> "0oo";
