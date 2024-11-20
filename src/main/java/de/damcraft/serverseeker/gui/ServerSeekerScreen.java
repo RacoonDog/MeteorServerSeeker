@@ -4,18 +4,12 @@ import de.damcraft.serverseeker.DiscordAvatar;
 import de.damcraft.serverseeker.ServerSeekerSystem;
 import de.damcraft.serverseeker.utils.MultiplayerScreenUtil;
 import meteordevelopment.meteorclient.gui.GuiThemes;
-import meteordevelopment.meteorclient.gui.WindowScreen;
 import meteordevelopment.meteorclient.gui.widgets.containers.WHorizontalList;
 import meteordevelopment.meteorclient.gui.widgets.pressable.WButton;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.multiplayer.MultiplayerScreen;
 
-public class ServerSeekerScreen extends WindowScreen {
+public class ServerSeekerScreen extends AbstractAuthRequiredScreen {
     private final MultiplayerScreen multiplayerScreen;
-    private WButton refreshButton;
-
-    private boolean waitingForAuth = false;
-    private boolean waitingForRefresh = false;
 
     public ServerSeekerScreen(MultiplayerScreen multiplayerScreen) {
         super(GuiThemes.get(), "ServerSeeker");
@@ -24,33 +18,7 @@ public class ServerSeekerScreen extends WindowScreen {
 
     @Override
     public void initWidgets() {
-        ServerSeekerSystem system = ServerSeekerSystem.get();
-        String authToken = system.apiKey;
-
-        if (authToken.isEmpty()) {
-            WHorizontalList widgetList = add(theme.horizontalList()).expandX().widget();
-            widgetList.add(theme.label("Please authenticate with Discord. "));
-            waitingForAuth = true;
-            WButton loginButton = widgetList.add(theme.button("Login")).widget();
-            loginButton.action = () -> {
-                if (this.client == null) return;
-                this.client.setScreen(new LoginWithDiscordScreen(this));
-            };
-            return;
-        }
-        if (system.networkIssue) {
-            WHorizontalList widgetList = add(theme.horizontalList()).expandX().widget();
-            widgetList.add(theme.label("Could not connect to the ServerSeeker api servers."));
-            refreshButton = widgetList.add(theme.button("Refresh")).widget();
-            refreshButton.action = () -> {
-                waitingForRefresh = true;
-                ServerSeekerSystem.get().refresh().thenRun(() -> {
-                    MinecraftClient.getInstance().execute(() -> {
-                        waitingForRefresh = false;
-                        this.reload();
-                    });
-                });
-            };
+        if (this.initWarnings()) {
             return;
         }
 
@@ -65,6 +33,8 @@ public class ServerSeekerScreen extends WindowScreen {
             ServerSeekerSystem.get().save();
             reload();
         };
+
+        add(theme.horizontalSeparator()).expandX();
 
         WHorizontalList widgetList = add(theme.horizontalList()).expandX().widget();
         WButton newServersButton = widgetList.add(this.theme.button("Find new servers")).expandX().widget();
@@ -89,34 +59,6 @@ public class ServerSeekerScreen extends WindowScreen {
             WButton confirmButton = buttonList.add(theme.button("Confirm")).expandX().widget();
             confirmButton.action = this::cleanUpServers;
         };
-    }
-
-    @Override
-    public void reload() {
-        this.refreshButton = null;
-        super.reload();
-    }
-
-    @Override
-    public void tick() {
-        if (waitingForRefresh) {
-            refreshButton.set(switch (refreshButton.getText()) {
-                default -> "ooo";
-                case "ooo" -> "0oo";
-                case "0oo" -> "o0o";
-                case "o0o" -> "oo0";
-            });
-        }
-        if (waitingForAuth) {
-            String authToken = ServerSeekerSystem.get().apiKey;
-            if (!authToken.isEmpty()) {
-                this.reload();
-                this.waitingForAuth = false;
-            }
-        }
-        if (refreshButton == null && ServerSeekerSystem.get().networkIssue) {
-            this.reload();
-        }
     }
 
     public void cleanUpServers() {

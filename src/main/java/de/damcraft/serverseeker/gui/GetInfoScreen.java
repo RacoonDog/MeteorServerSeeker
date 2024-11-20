@@ -4,8 +4,6 @@ import de.damcraft.serverseeker.ServerSeekerSystem;
 import de.damcraft.serverseeker.ssapi.requests.ServerInfoRequest;
 import de.damcraft.serverseeker.ssapi.responses.ServerInfoResponse;
 import meteordevelopment.meteorclient.gui.GuiThemes;
-import meteordevelopment.meteorclient.gui.WindowScreen;
-import meteordevelopment.meteorclient.gui.widgets.containers.WHorizontalList;
 import meteordevelopment.meteorclient.gui.widgets.containers.WTable;
 import meteordevelopment.meteorclient.gui.widgets.pressable.WButton;
 import meteordevelopment.meteorclient.systems.accounts.Account;
@@ -28,12 +26,8 @@ import java.util.List;
 
 import static meteordevelopment.meteorclient.MeteorClient.mc;
 
-public class GetInfoScreen extends WindowScreen {
+public class GetInfoScreen extends AbstractAuthRequiredScreen {
     private final MultiplayerServerListWidget.Entry entry;
-    private WButton refreshButton;
-
-    private boolean waitingForAuth = false;
-    private boolean waitingForRefresh = false;
 
     public GetInfoScreen(MultiplayerScreen multiplayerScreen, MultiplayerServerListWidget.Entry entry) {
         super(GuiThemes.get(), "Get players");
@@ -43,33 +37,7 @@ public class GetInfoScreen extends WindowScreen {
 
     @Override
     public void initWidgets() {
-        ServerSeekerSystem system = ServerSeekerSystem.get();
-        String apiKey = ServerSeekerSystem.get().apiKey;
-
-        if (apiKey.isEmpty()) {
-            WHorizontalList widgetList = add(theme.horizontalList()).expandX().widget();
-            widgetList.add(theme.label("Please authenticate with Discord. "));
-            waitingForAuth = true;
-            WButton loginButton = widgetList.add(theme.button("Login")).widget();
-            loginButton.action = () -> {
-                if (this.client == null) return;
-                this.client.setScreen(new LoginWithDiscordScreen(this));
-            };
-            return;
-        }
-        if (system.networkIssue) {
-            WHorizontalList widgetList = add(theme.horizontalList()).expandX().widget();
-            widgetList.add(theme.label("Could not connect to the ServerSeeker api servers."));
-            refreshButton = widgetList.add(theme.button("Refresh")).widget();
-            refreshButton.action = () -> {
-                waitingForRefresh = true;
-                ServerSeekerSystem.get().refresh().thenRun(() -> {
-                    MinecraftClient.getInstance().execute(() -> {
-                        waitingForRefresh = false;
-                        this.reload();
-                    });
-                });
-            };
+        if (this.initWarnings()) {
             return;
         }
 
@@ -104,7 +72,7 @@ public class GetInfoScreen extends WindowScreen {
           "ip": "109.123.240.84", // The ip of the server
           "port": 25565  // The port of the server (defaults to 25565)
         } */
-        ServerInfoRequest request = new ServerInfoRequest(system.apiKey, ip, port);
+        ServerInfoRequest request = new ServerInfoRequest(ServerSeekerSystem.get().apiKey, ip, port);
 
         MeteorExecutor.execute(() -> {
             ServerInfoResponse response = Http.post("https://api.serverseeker.net/server_info")
@@ -207,28 +175,6 @@ public class GetInfoScreen extends WindowScreen {
                 };
             }
             table.row();
-        }
-    }
-
-    @Override
-    public void tick() {
-        if (waitingForRefresh) {
-            refreshButton.set(switch (refreshButton.getText()) {
-                default -> "ooo";
-                case "ooo" -> "0oo";
-                case "0oo" -> "o0o";
-                case "o0o" -> "oo0";
-            });
-        }
-        if (waitingForAuth) {
-            String authToken = ServerSeekerSystem.get().apiKey;
-            if (!authToken.isEmpty()) {
-                this.reload();
-                this.waitingForAuth = false;
-            }
-        }
-        if (refreshButton == null && ServerSeekerSystem.get().networkIssue) {
-            this.reload();
         }
     }
 }
