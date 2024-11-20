@@ -112,7 +112,7 @@ public class DiscordAuth {
         public void handleCode(String code) {
             // Get the ServerSeeker auth token
 
-            GetTokenRequest request = new GetTokenRequest(code, "meteor serverseeker");
+            GetTokenRequest request = new GetTokenRequest(code);
 
             GetTokenResponse response = Http.post("https://api.serverseeker.net/get_token")
                 .exceptionHandler(e -> LOG.info("Network error: " + e.getMessage()))

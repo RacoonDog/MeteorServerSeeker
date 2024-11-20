@@ -354,8 +354,6 @@ public class FindNewServersScreen extends WindowScreen {
 
 
             MeteorExecutor.execute(() -> {
-                ServerSeekerSystem.get().invalidate();
-
                 ServersResponse response = Http.post("https://api.serverseeker.net/servers")
                     .exceptionHandler(e -> LOG.error("Network error: " + e.getMessage()))
                     .bodyJson(request)

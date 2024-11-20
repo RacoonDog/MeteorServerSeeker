@@ -98,8 +98,6 @@ public class FindPlayerScreen extends WindowScreen {
                         return;
                     }
 
-                    ServerSeekerSystem.get().invalidate();
-
                     // Set error message if there is one
                     if (response.isError()) {
                         add(theme.label(response.error)).expandX();

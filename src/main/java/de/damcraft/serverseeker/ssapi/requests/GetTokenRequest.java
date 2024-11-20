@@ -1,3 +1,3 @@
 package de.damcraft.serverseeker.ssapi.requests;
 
-public record GetTokenRequest(String code, String usage) {}
+public record GetTokenRequest(String code) {}

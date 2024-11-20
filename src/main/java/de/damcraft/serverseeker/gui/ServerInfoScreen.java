@@ -44,8 +44,6 @@ public class ServerInfoScreen extends WindowScreen {
                 .bodyJson(request)
                 .sendJson(ServerInfoResponse.class);
 
-            ServerSeekerSystem.get().invalidate();
-
             this.client.execute(() -> {
                 clear();
 
