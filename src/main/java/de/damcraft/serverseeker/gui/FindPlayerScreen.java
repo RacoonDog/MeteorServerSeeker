@@ -1,7 +1,6 @@
 package de.damcraft.serverseeker.gui;
 
 import com.google.common.net.HostAndPort;
-import de.damcraft.serverseeker.ServerSeekerSystem;
 import de.damcraft.serverseeker.ssapi.requests.WhereisRequest;
 import de.damcraft.serverseeker.ssapi.responses.WhereisResponse;
 import de.damcraft.serverseeker.utils.MultiplayerScreenUtil;
@@ -87,14 +86,13 @@ public class FindPlayerScreen extends WindowScreen {
 
             MeteorExecutor.execute(() -> {
                 WhereisResponse response = Http.post("https://api.serverseeker.net/whereis")
-                    .exceptionHandler(e -> LOG.error("Network error: " + e.getMessage()))
+                    .exceptionHandler(e -> LOG.error("Could not post to 'whereis': " + e.getMessage()))
                     .bodyJson(request.json())
                     .sendJson(WhereisResponse.class);
 
                 MinecraftClient.getInstance().execute(() -> {
                     if (response == null) {
                         add(theme.label("Network error")).expandX();
-                        ServerSeekerSystem.get().networkIssue = true;
                         return;
                     }
 

@@ -22,6 +22,8 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.List;
 
+import static de.damcraft.serverseeker.ServerSeeker.LOG;
+
 public class ServerInfoScreen extends WindowScreen {
     private final String serverIp;
 
@@ -41,6 +43,7 @@ public class ServerInfoScreen extends WindowScreen {
 
         MeteorExecutor.execute(() -> {
             ServerInfoResponse response = Http.post("https://api.serverseeker.net/server_info")
+                .exceptionHandler(e -> LOG.error("Could not post to 'server_info': ", e))
                 .bodyJson(request)
                 .sendJson(ServerInfoResponse.class);
 
@@ -48,7 +51,6 @@ public class ServerInfoScreen extends WindowScreen {
                 clear();
 
                 if (response == null) {
-                    ServerSeekerSystem.get().networkIssue = true;
                     add(theme.label("Network error")).expandX();
                     return;
                 }

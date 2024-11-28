@@ -8,6 +8,8 @@ import meteordevelopment.meteorclient.gui.widgets.containers.WHorizontalList;
 import meteordevelopment.meteorclient.gui.widgets.pressable.WButton;
 import net.minecraft.client.gui.screen.multiplayer.MultiplayerScreen;
 
+import static meteordevelopment.meteorclient.MeteorClient.mc;
+
 public class ServerSeekerScreen extends AbstractAuthRequiredScreen {
     private final MultiplayerScreen multiplayerScreen;
 
@@ -26,6 +28,12 @@ public class ServerSeekerScreen extends AbstractAuthRequiredScreen {
         // Add an image of the user's avatar
         accountList.add(theme.texture(32, 32, 0, DiscordAvatar.get()));
         accountList.add(theme.label(ServerSeekerSystem.get().userInfo.discord_username)).expandX();
+
+        WButton copyButton = accountList.add(theme.button("Copy Token")).widget();
+        copyButton.action = () -> {
+            mc.keyboard.setClipboard(ServerSeekerSystem.get().apiKey);
+        };
+
         WButton logoutButton = accountList.add(theme.button("Logout")).widget();
         logoutButton.action = () -> {
             ServerSeekerSystem.get().apiKey = "";

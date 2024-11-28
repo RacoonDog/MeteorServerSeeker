@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import static de.damcraft.serverseeker.ServerSeeker.LOG;
 import static meteordevelopment.meteorclient.MeteorClient.mc;
 
 public class HistoricPlayersUpdater {
@@ -49,11 +50,11 @@ public class HistoricPlayersUpdater {
         ServerInfoRequest request = new ServerInfoRequest(ServerSeekerSystem.get().apiKey, ip, port);
 
         ServerInfoResponse response = Http.post("https://api.serverseeker.net/server_info")
+            .exceptionHandler(e -> LOG.error("Could not post to 'server_info': ", e))
             .bodyJson(request)
             .sendJson(ServerInfoResponse.class);
 
         if (response == null) {
-            ServerSeekerSystem.get().networkIssue = true;
             return;
         }
 

@@ -115,14 +115,13 @@ public class DiscordAuth {
             GetTokenRequest request = new GetTokenRequest(code);
 
             GetTokenResponse response = Http.post("https://api.serverseeker.net/get_token")
-                .exceptionHandler(e -> LOG.info("Network error: " + e.getMessage()))
+                .exceptionHandler(e -> LOG.info("Could not post to 'get_token': " + e.getMessage()))
                 .bodyJson(request)
                 .sendJson(GetTokenResponse.class);
 
             // {"api_key": "..."} or {"error": "..."}
 
             if (response == null) {
-                ServerSeekerSystem.get().networkIssue = true;
                 accept(null, "Network error");
                 return;
             }

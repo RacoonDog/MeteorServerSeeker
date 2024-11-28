@@ -19,7 +19,6 @@ public class ServerSeekerSystem extends System<ServerSeekerSystem> {
 
     public volatile String apiKey = "";
     public volatile UserInfoResponse userInfo;
-    public volatile boolean networkIssue = false;
     private volatile long lastUpdate = -1;
     private volatile CompletableFuture<UserInfoResponse> future;
 
@@ -48,16 +47,14 @@ public class ServerSeekerSystem extends System<ServerSeekerSystem> {
             UserInfoRequest request = new UserInfoRequest(apiKey);
 
             UserInfoResponse response = Http.post("https://api.serverseeker.net/user_info")
+                .exceptionHandler(e -> LOG.error("Could not post to 'user_info': ", e))
                 .bodyJson(request)
                 .sendJson(UserInfoResponse.class);
 
             if (response == null) {
-                LOG.error("Network error");
-                networkIssue = true;
                 throw new RuntimeException("Network error");
             }
 
-            networkIssue = false;
             lastUpdate = java.lang.System.currentTimeMillis();
             future = null;
 

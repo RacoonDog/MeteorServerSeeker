@@ -24,6 +24,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.List;
 
+import static de.damcraft.serverseeker.ServerSeeker.LOG;
 import static meteordevelopment.meteorclient.MeteorClient.mc;
 
 public class GetInfoScreen extends AbstractAuthRequiredScreen {
@@ -76,6 +77,7 @@ public class GetInfoScreen extends AbstractAuthRequiredScreen {
 
         MeteorExecutor.execute(() -> {
             ServerInfoResponse response = Http.post("https://api.serverseeker.net/server_info")
+                .exceptionHandler(e -> LOG.error("Could not post to 'server_info': ", e))
                 .bodyJson(request)
                 .sendJson(ServerInfoResponse.class);
 
@@ -83,7 +85,6 @@ public class GetInfoScreen extends AbstractAuthRequiredScreen {
                 clear();
 
                 if (response == null) {
-                    ServerSeekerSystem.get().networkIssue = true;
                     add(theme.label("Network error")).expandX();
                     return;
                 }

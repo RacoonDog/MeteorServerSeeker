@@ -2,7 +2,6 @@ package de.damcraft.serverseeker.gui;
 
 import com.google.common.net.HostAndPort;
 import de.damcraft.serverseeker.ServerSeeker;
-import de.damcraft.serverseeker.ServerSeekerSystem;
 import de.damcraft.serverseeker.country.Country;
 import de.damcraft.serverseeker.country.CountrySetting;
 import de.damcraft.serverseeker.ssapi.requests.ServersRequest;
@@ -355,12 +354,11 @@ public class FindNewServersScreen extends WindowScreen {
 
             MeteorExecutor.execute(() -> {
                 ServersResponse response = Http.post("https://api.serverseeker.net/servers")
-                    .exceptionHandler(e -> LOG.error("Network error: " + e.getMessage()))
+                    .exceptionHandler(e -> LOG.error("Could not post to 'servers': " + e.getMessage()))
                     .bodyJson(request)
                     .sendJson(ServersResponse.class);
 
                 if (response == null) {
-                    ServerSeekerSystem.get().networkIssue = true;
                     this.threadError = "Network error";
                     this.threadHasFinished = true;
                     return;
