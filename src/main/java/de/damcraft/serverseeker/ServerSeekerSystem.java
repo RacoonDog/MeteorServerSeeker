@@ -8,6 +8,7 @@ import meteordevelopment.meteorclient.utils.network.Http;
 import meteordevelopment.meteorclient.utils.network.MeteorExecutor;
 import net.minecraft.nbt.NbtCompound;
 
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static de.damcraft.serverseeker.ServerSeeker.LOG;
@@ -72,9 +73,9 @@ public class ServerSeekerSystem extends System<ServerSeekerSystem> {
         NbtCompound tag = new NbtCompound();
 
         tag.putString("apiKey", apiKey);
-        tag.putString("userId", userInfo.discord_id);
-        tag.putString("username", userInfo.discord_username);
-        tag.putString("avatarUrl", userInfo.discord_avatar_url);
+        tag.putString("userId", Optional.ofNullable(userInfo.discord_id).orElse(""));
+        tag.putString("username", Optional.ofNullable(userInfo.discord_username).orElse(""));
+        tag.putString("avatarUrl", Optional.ofNullable(userInfo.discord_avatar_url).orElse(""));
 
         return tag;
     }
