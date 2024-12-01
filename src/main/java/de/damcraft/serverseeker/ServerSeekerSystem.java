@@ -73,8 +73,7 @@ public class ServerSeekerSystem extends System<ServerSeekerSystem> {
         NbtCompound tag = new NbtCompound();
 
         tag.putString("apiKey", apiKey);
-        tag.putString("userId", Optional.ofNullable(userInfo.discord_id).orElse(""));
-        tag.putString("username", Optional.ofNullable(userInfo.discord_username).orElse(""));
+        tag.putString("username", userInfo.discord_username);
         tag.putString("avatarUrl", Optional.ofNullable(userInfo.discord_avatar_url).orElse(""));
 
         return tag;
@@ -84,14 +83,9 @@ public class ServerSeekerSystem extends System<ServerSeekerSystem> {
     public ServerSeekerSystem fromTag(NbtCompound tag) {
         apiKey = tag.getString("apiKey");
 
-        String userId = tag.getString("userId");
-        String username = tag.getString("username");
-        String avatarUrl = tag.getString("avatarUrl");
-
         UserInfoResponse info = this.userInfo = new UserInfoResponse();
-        info.discord_id = userId;
-        info.discord_username = username;
-        info.discord_avatar_url = avatarUrl;
+        info.discord_username = tag.getString("username");
+        info.discord_avatar_url = tag.getString("avatarUrl");
 
         return this;
     }
