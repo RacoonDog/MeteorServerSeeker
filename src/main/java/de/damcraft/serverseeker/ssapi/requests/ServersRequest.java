@@ -1,10 +1,10 @@
 package de.damcraft.serverseeker.ssapi.requests;
 
 import com.google.gson.JsonArray;
-import de.damcraft.serverseeker.ServerSeekerSystem;
+import de.damcraft.serverseeker.ServerSeeker;
 
 public class ServersRequest {
-    private final String api_key = ServerSeekerSystem.get().apiKey;
+    private final String api_key = ServerSeeker.API_KEY;
     private Integer asn;
     private String country_code;
     private Boolean cracked;

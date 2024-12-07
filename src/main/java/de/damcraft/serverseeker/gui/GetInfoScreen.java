@@ -1,9 +1,10 @@
 package de.damcraft.serverseeker.gui;
 
-import de.damcraft.serverseeker.ServerSeekerSystem;
+import de.damcraft.serverseeker.ServerSeeker;
 import de.damcraft.serverseeker.ssapi.requests.ServerInfoRequest;
 import de.damcraft.serverseeker.ssapi.responses.ServerInfoResponse;
 import meteordevelopment.meteorclient.gui.GuiThemes;
+import meteordevelopment.meteorclient.gui.WindowScreen;
 import meteordevelopment.meteorclient.gui.widgets.containers.WTable;
 import meteordevelopment.meteorclient.gui.widgets.pressable.WButton;
 import meteordevelopment.meteorclient.systems.accounts.Account;
@@ -27,7 +28,7 @@ import java.util.List;
 import static de.damcraft.serverseeker.ServerSeeker.LOG;
 import static meteordevelopment.meteorclient.MeteorClient.mc;
 
-public class GetInfoScreen extends AbstractAuthRequiredScreen {
+public class GetInfoScreen extends WindowScreen {
     private final MultiplayerServerListWidget.Entry entry;
 
     public GetInfoScreen(MultiplayerScreen multiplayerScreen, MultiplayerServerListWidget.Entry entry) {
@@ -38,10 +39,6 @@ public class GetInfoScreen extends AbstractAuthRequiredScreen {
 
     @Override
     public void initWidgets() {
-        if (this.initWarnings()) {
-            return;
-        }
-
         // Get info about the server
         if (entry == null || !(entry instanceof MultiplayerServerListWidget.ServerEntry)) {
             add(theme.label("No server selected"));
@@ -73,7 +70,7 @@ public class GetInfoScreen extends AbstractAuthRequiredScreen {
           "ip": "109.123.240.84", // The ip of the server
           "port": 25565  // The port of the server (defaults to 25565)
         } */
-        ServerInfoRequest request = new ServerInfoRequest(ServerSeekerSystem.get().apiKey, ip, port);
+        ServerInfoRequest request = new ServerInfoRequest(ServerSeeker.API_KEY, ip, port);
 
         MeteorExecutor.execute(() -> {
             ServerInfoResponse response = Http.post("https://api.serverseeker.net/server_info")

@@ -1,16 +1,13 @@
 package de.damcraft.serverseeker.gui;
 
-import de.damcraft.serverseeker.DiscordAvatar;
-import de.damcraft.serverseeker.ServerSeekerSystem;
 import de.damcraft.serverseeker.utils.MultiplayerScreenUtil;
 import meteordevelopment.meteorclient.gui.GuiThemes;
+import meteordevelopment.meteorclient.gui.WindowScreen;
 import meteordevelopment.meteorclient.gui.widgets.containers.WHorizontalList;
 import meteordevelopment.meteorclient.gui.widgets.pressable.WButton;
 import net.minecraft.client.gui.screen.multiplayer.MultiplayerScreen;
 
-import static meteordevelopment.meteorclient.MeteorClient.mc;
-
-public class ServerSeekerScreen extends AbstractAuthRequiredScreen {
+public class ServerSeekerScreen extends WindowScreen {
     private final MultiplayerScreen multiplayerScreen;
 
     public ServerSeekerScreen(MultiplayerScreen multiplayerScreen) {
@@ -20,30 +17,6 @@ public class ServerSeekerScreen extends AbstractAuthRequiredScreen {
 
     @Override
     public void initWidgets() {
-        if (this.initWarnings()) {
-            return;
-        }
-
-        WHorizontalList accountList = add(theme.horizontalList()).expandX().widget();
-        // Add an image of the user's avatar
-        accountList.add(theme.texture(32, 32, 0, DiscordAvatar.get()));
-        accountList.add(theme.label(ServerSeekerSystem.get().userInfo.discord_username)).expandX();
-
-        WButton copyButton = accountList.add(theme.button("Copy Token")).widget();
-        copyButton.action = () -> {
-            mc.keyboard.setClipboard(ServerSeekerSystem.get().apiKey);
-        };
-
-        WButton logoutButton = accountList.add(theme.button("Logout")).widget();
-        logoutButton.action = () -> {
-            ServerSeekerSystem.get().apiKey = "";
-            ServerSeekerSystem.get().invalidate();
-            ServerSeekerSystem.get().save();
-            reload();
-        };
-
-        add(theme.horizontalSeparator()).expandX();
-
         WHorizontalList widgetList = add(theme.horizontalList()).expandX().widget();
         WButton newServersButton = widgetList.add(this.theme.button("Find new servers")).expandX().widget();
         WButton findPlayersButton = widgetList.add(this.theme.button("Search players")).expandX().widget();
@@ -59,14 +32,33 @@ public class ServerSeekerScreen extends AbstractAuthRequiredScreen {
         cleanUpServersButton.action = () -> {
             if (this.client == null) return;
             clear();
-            add(theme.label("Are you sure you want to clean up your server list?"));
-            add(theme.label("This will remove all servers that start with \"ServerSeeker\""));
-            WHorizontalList buttonList = add(theme.horizontalList()).expandX().widget();
-            WButton backButton = buttonList.add(theme.button("Back")).expandX().widget();
-            backButton.action = this::reload;
-            WButton confirmButton = buttonList.add(theme.button("Confirm")).expandX().widget();
-            confirmButton.action = this::cleanUpServers;
+            if (hasAnyServers()) {
+                add(theme.label("Are you sure you want to clean up your server list?"));
+                add(theme.label("This will remove all servers that start with \"ServerSeeker\""));
+                WHorizontalList buttonList = add(theme.horizontalList()).expandX().widget();
+                WButton backButton = buttonList.add(theme.button("Back")).expandX().widget();
+                backButton.action = this::reload;
+                WButton confirmButton = buttonList.add(theme.button("Confirm")).expandX().widget();
+                confirmButton.action = this::cleanUpServers;
+            } else {
+                add(theme.label("There are no servers to clean up."));
+                WHorizontalList buttonList = add(theme.horizontalList()).expandX().widget();
+                WButton backButton = buttonList.add(theme.button("Back")).expandX().widget();
+                backButton.action = this::reload;
+            }
         };
+    }
+
+    private boolean hasAnyServers() {
+        if (this.client == null) return false;
+
+        for (int i = 0; i < this.multiplayerScreen.getServerList().size(); i++) {
+            if (this.multiplayerScreen.getServerList().get(i).name.startsWith("ServerSeeker")) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public void cleanUpServers() {

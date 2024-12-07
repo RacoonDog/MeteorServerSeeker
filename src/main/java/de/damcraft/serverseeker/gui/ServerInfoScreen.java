@@ -1,7 +1,7 @@
 package de.damcraft.serverseeker.gui;
 
 import com.google.common.net.HostAndPort;
-import de.damcraft.serverseeker.ServerSeekerSystem;
+import de.damcraft.serverseeker.ServerSeeker;
 import de.damcraft.serverseeker.ssapi.requests.ServerInfoRequest;
 import de.damcraft.serverseeker.ssapi.responses.ServerInfoResponse;
 import meteordevelopment.meteorclient.gui.GuiThemes;
@@ -36,10 +36,8 @@ public class ServerInfoScreen extends WindowScreen {
     public void initWidgets() {
         add(theme.label("Fetching server info..."));
 
-        ServerSeekerSystem system = ServerSeekerSystem.get();
-
         HostAndPort hap = HostAndPort.fromString(serverIp);
-        ServerInfoRequest request = new ServerInfoRequest(system.apiKey, hap.getHost(), hap.getPort());
+        ServerInfoRequest request = new ServerInfoRequest(ServerSeeker.API_KEY, hap.getHost(), hap.getPort());
 
         MeteorExecutor.execute(() -> {
             ServerInfoResponse response = Http.post("https://api.serverseeker.net/server_info")

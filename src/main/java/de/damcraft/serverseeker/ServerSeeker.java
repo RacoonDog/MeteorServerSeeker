@@ -38,6 +38,13 @@ public class ServerSeeker extends MeteorAddon {
     public static final Category CATEGORY = new Category("ServerSeeker", Items.SPYGLASS.getDefaultStack());
     public static final Map<String, Country> COUNTRY_MAP = new Object2ReferenceOpenHashMap<>();
 
+    /*
+    Hardcoded ServerSeeker API key
+    Since the ServerSeeker authentication flow is currently unusable, hard coding a generously-donated user API key is
+    the simplest option for all parties involved
+     */
+    public static final String API_KEY = "P1vjk79SeijP5YoUAxX_oZkVE9A5Kljx-aiBbe7hQsU=";
+
     public static final Gson gson = new Gson();
 
     @Override

@@ -1,6 +1,6 @@
 package de.damcraft.serverseeker.utils;
 
-import de.damcraft.serverseeker.ServerSeekerSystem;
+import de.damcraft.serverseeker.ServerSeeker;
 import de.damcraft.serverseeker.hud.HistoricPlayersHud;
 import de.damcraft.serverseeker.ssapi.requests.ServerInfoRequest;
 import de.damcraft.serverseeker.ssapi.responses.ServerInfoResponse;
@@ -47,7 +47,7 @@ public class HistoricPlayersUpdater {
         String ip = addressParts[0];
         int port = Integer.parseInt(addressParts[1]);
 
-        ServerInfoRequest request = new ServerInfoRequest(ServerSeekerSystem.get().apiKey, ip, port);
+        ServerInfoRequest request = new ServerInfoRequest(ServerSeeker.API_KEY, ip, port);
 
         ServerInfoResponse response = Http.post("https://api.serverseeker.net/server_info")
             .exceptionHandler(e -> LOG.error("Could not post to 'server_info': ", e))
