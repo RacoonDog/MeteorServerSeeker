@@ -18,8 +18,8 @@ jobs:
         uses: marvinpinto/action-automatic-releases@latest
         with:
           repo_token: '${{ secrets.GITHUB_TOKEN }}'
-          automatic_release_tag: snapshot
+          automatic_release_tag: 1.21.1-lts
           prerelease: true
-          title: Dev Build
+          title: 1.21.1 Release
           files: |
             ./build/libs/*.jar
