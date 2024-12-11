@@ -63,6 +63,7 @@ public class ServerSeeker extends MeteorAddon {
 
         MeteorClient.EVENT_BUS.subscribe(HistoricPlayersUpdater.class);
     }
+
     @Override
     public void onRegisterCategories() {
         Modules.registerCategory(CATEGORY);

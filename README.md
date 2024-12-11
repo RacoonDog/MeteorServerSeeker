@@ -2,18 +2,19 @@
     <img src="https://custom-icon-badges.demolab.com/badge/-Download-2b2b2b?style=for-the-badge&logo=download&logoColor=white" width=2000 >
 </a>
 
+## 📢 Important Notice 📢
+
+**On 10/12/2024, GitHub responded to a DMCA takedown notice submitted by the Fifth Column griefing group that claimed that the ServerSeekerV2 project infringed on their copyright for the ServerSeeker project.
+This claim is entirely baseless and constitutes an abuse of GitHub's DMCA system as well as perjury.**
+For more information, see [here](https://gist.github.com/RacoonDog/41d88a21e2d7bab4d1ad075b77ee1248).
+
+
 ## Installing
 1. Download Meteor Client (https://meteorclient.com/download), for help see https://meteorclient.com/faq/installation
 2. Download Meteor ServerSeeker using the comically large button above and drop it in your mods folder!
 
 <div align="center"><h2>Unofficial Meteor Addon for ServerSeeker</h2></div>
 
-<div align="center">
-    <h3>Official ServerSeeker discord server (has a bot with a few more functionalities, like searching for bedrock servers), join for support</h3>
-    <a href="https://discord.gg/jVyHyYbqdS">
-    <img src="https://invidget.switchblade.xyz/serverseeker-1087081486747971705">
-    </a>
-</div>  
 <br>
 <br>
 <br>    
