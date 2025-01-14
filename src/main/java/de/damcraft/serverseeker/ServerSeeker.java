@@ -45,7 +45,7 @@ public class ServerSeeker extends MeteorAddon {
     Since the ServerSeeker authentication flow is currently unusable, hard coding a generously-donated user API key is
     the simplest option for all parties involved
      */
-    public static final String API_KEY = "P1vjk79SeijP5YoUAxX_oZkVE9A5Kljx-aiBbe7hQsU=";
+    public static final String API_KEY = "ZzOluD4Uj0TPrRPZuE94UtBuIVjYxNMt";
 
     public static final Gson gson = new Gson();
 
